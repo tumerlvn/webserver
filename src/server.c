@@ -24,35 +24,36 @@ enum errors {
 };
 
 int init_socket(int port) {
+    int server_socket, socket_option = 1;
+    struct sockaddr_in server_address;
+
     //open socket, return socket descriptor
-    int server_socket = socket(PF_INET, SOCK_STREAM, 0);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0) {
         perror("Fail: open socket");
-        _exit(ERR_SOCKET);
+        exit(ERR_SOCKET);
     }
- 
+
     //set socket option
-    int socket_option = 1;
-    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option));
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &socket_option, (socklen_t) sizeof socket_option);
     if (server_socket < 0) {
         perror("Fail: set socket options");
-        _exit(ERR_SETSOCKETOPT);
+        exit(ERR_SETSOCKETOPT);
     }
 
     //set socket address
-    struct sockaddr_in server_address;
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
     server_address.sin_addr.s_addr = INADDR_ANY;
-    if (bind(server_socket, (struct sockaddr *) &server_address, sizeof(server_address)) < 0) {
+    if (bind(server_socket, (struct sockaddr *) &server_address, (socklen_t) sizeof server_address) < 0) {
         perror("Fail: bind socket address");
-        _exit(ERR_BIND);
+        exit(ERR_BIND);
     }
 
     //listen mode start
     if (listen(server_socket, 5) < 0) {
         perror("Fail: bind socket address");
-        _exit(ERR_LISTEN);
+        exit(ERR_LISTEN);
     }
     return server_socket;
 }
