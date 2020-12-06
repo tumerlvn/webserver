@@ -112,6 +112,23 @@ void sendDataBack(char *fname, int client_socket) {
     }
 }
 
+void infoExchange (int client_socket) {
+    int j = 0;
+    char ch;
+    while (read(client_socket, &ch, 1) > 0) {
+        if (ch == ' ') {
+            char fname[100] = {0};
+            j = getFname(fname, client_socket);
+            if (fork() == 0) {
+                sendDataBack(fname, client_socket);
+                exit(0);
+            }
+            wait(NULL);
+            j = 0; 
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc != 3) {
         puts("Incorrect args.");
@@ -127,32 +144,22 @@ int main(int argc, char** argv) {
     socklen_t size = sizeof(client_address);
     int clients = atoi(argv[2]);
     int *client_socket = malloc(clients * sizeof(int));
-    char ch;
-    int j = 0;
+
     for (int i = 0; i < clients; i++) {
         if (fork() == 0) {
             client_socket[i] = accept(server_socket, 
                                (struct sockaddr *) &client_address,
                                &size);
-            while (read(client_socket[i], &ch, 1) > 0) {
-                if (ch == ' ') {
-                    char fname[100] = {0};
-                    j = getFname(fname, client_socket[i]);
-                    if (fork() == 0) {
-                        sendDataBack(fname, client_socket[i]);
-                        exit(0);
-                    }
-                    wait(NULL);
-                    j = 0; 
-                }
-            }
+            infoExchange(client_socket[i]);
             close(client_socket[i]);
             exit(0);
         }
     }
+
     for (int i = 0; i < clients; i++) {
         wait(NULL);
     }
+
     free(client_socket);
     return OK;
 }
